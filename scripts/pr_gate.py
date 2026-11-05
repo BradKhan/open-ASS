@@ -33,8 +33,8 @@ MANIFESTS = {"package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
              "Gemfile.lock", "pom.xml", "build.gradle", "Dockerfile",
              "docker-compose.yml", "Makefile", "justfile"}
 DEPENDABOT_PIN = re.compile(
-    r"^\\s*uses:\\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([a-f0-9]{40})"
-    r"\\s+#\\s*v[0-9][0-9A-Za-z.+-]*\\s*$"
+    r"^\s*uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([a-f0-9]{40})"
+    r"\s+#\s*v[0-9][0-9A-Za-z.+-]*\s*$"
 )
 RISK = re.compile(r"(?im)^\s*Risk(?: class)?\s*:\s*(fast|standard|critical)\s*$")
 ISSUE = re.compile(r"(?im)^\s*Issue\s*:\s*(?:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#([1-9][0-9]*)\s*$")
@@ -79,7 +79,7 @@ def trusted_dependabot(pull, changed, diff_text):
         or (head.get("repo") or {}).get("full_name") !=
            (base.get("repo") or {}).get("full_name")):
         return False
-    if len(changed) != 1 or not re.fullmatch(r"\\.github/workflows/[A-Za-z0-9_.-]+\\.ya?ml", changed[0]):
+    if len(changed) != 1 or not re.fullmatch(r"\.github/workflows/[A-Za-z0-9_.-]+\.ya?ml", changed[0]):
         return False
     removed, added = [], []
     for line in diff_text.splitlines():
