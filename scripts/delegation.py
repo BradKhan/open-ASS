@@ -6,6 +6,7 @@ existing lifecycle task, explicit execution consent and independent CI remain
 authoritative. No new scheduler or model gateway is introduced here.
 """
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -13,8 +14,10 @@ import sys
 from pathlib import Path, PurePosixPath
 
 try:
-    from scripts import harness, lifecycle, supervisor
+    from scripts import agents, context, harness, lifecycle, supervisor
 except ModuleNotFoundError:
+    import agents
+    import context
     import harness
     import lifecycle
     import supervisor
@@ -105,8 +108,8 @@ def validate(data):
         raise DelegationError("duplicate provider")
     if c["harness"] not in p["providers"]:
         raise DelegationError("child provider is not authorized by parent")
-    if c["role"] not in ("engineer", "designer", "writer", "reviewer"):
-        raise DelegationError("unsupported delegation role")
+    if not isinstance(c["role"], str) or c["role"] not in agents.load()["roles"]:
+        raise DelegationError("role is not declared in the shared role registry")
     parent_scopes, child_scopes = _scopes(p["scopes"]), _scopes(c["scopes"])
     if not all(_contains(parent_scopes, value) for value in child_scopes):
         raise DelegationError("child scope is not included in parent scope")
@@ -147,13 +150,15 @@ def plan(data, snapshot=None):
             raise DelegationError("child task and approved lifecycle criteria must match")
         if c["budget_cents"] > snapshot["budget"] - snapshot["spent"]:
             raise DelegationError("child exceeds remaining durable task budget")
+    stage = agents.load()["roles"][c["role"]]["stage"]
     return {"status": "planned", "delegation_id": data["id"],
             "parent": data["parent"]["id"], "task": c["task_id"],
             "harness": c["harness"], "role": c["role"], "mode": c["permission"],
             "budget_cents": c["budget_cents"], "timeout_seconds": c["timeout_seconds"],
             "scope": c["scopes"], "context_refs": len(c["context"]),
+            "icm_stage": stage,
             "supervised_run_available": c["permission"] == "workspace-write"
-                                      and c["role"] in ("engineer", "designer", "writer"),
+                                      and agents.load()["roles"][c["role"]]["mode"] == "write-branch",
             "note": "Planning is not permission. Context hashes are claims until independently verified."}
 
 
@@ -170,6 +175,14 @@ def dispatch(data, db, actor, *, execute=False, ack_unmetered=False,
         raise DelegationError("durable read-only/reviewer delegation not implemented")
     if not ack_unmetered:
         raise DelegationError("explicit unmetered runtime consent required")
+    for item in child["context"]:
+        try:
+            source = context.confined_file(ROOT, item["path"])
+            actual = hashlib.sha256(source.read_bytes()).hexdigest()
+        except (OSError, ValueError) as exc:
+            raise DelegationError("context source cannot be independently verified") from exc
+        if actual != item["sha256"]:
+            raise DelegationError("context source hash changed or was misreported")
     if backend not in ("local", "container"):
         raise DelegationError("unknown execution backend")
     # The existing supervisor enforces clean nondefault branches, actual
