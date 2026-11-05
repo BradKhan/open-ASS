@@ -44,6 +44,7 @@ class DelegationContractTests(unittest.TestCase):
         self.assertEqual(result["task"], "child-001")
         self.assertTrue(result["supervised_run_available"])
         self.assertEqual(result["context_refs"], 1)
+        self.assertEqual(result["icm_stage"], "implement")
 
     def test_parent_readonly_cannot_grant_write(self):
         self.mutate(lambda d: d["parent"].update(permission="read-only"))
@@ -107,6 +108,7 @@ class DelegationContractTests(unittest.TestCase):
 
     def test_dispatch_requires_consent_then_uses_existing_supervisor(self):
         d = fixture()
+        d["child"]["context"] = []
         calls = []
         def fake_executor(*args, **kwargs):
             calls.append((args, kwargs))
@@ -128,9 +130,24 @@ class DelegationContractTests(unittest.TestCase):
                 self.assertFalse(result["accepted"])
                 self.assertFalse(result["scope_enforced"])
 
+    def test_unverified_or_changed_context_never_reaches_executor(self):
+        d = fixture()
+        with tempfile.TemporaryDirectory() as folder:
+            with lifecycle.connect(Path(folder) / "task.sqlite") as db:
+                lifecycle.create(db, "child-001", 48, d["child"]["criteria"], 100)
+                lifecycle.transition(db, "child-001", "ready", "owner", 0)
+                called = []
+                with self.assertRaisesRegex(delegation.DelegationError, "context"):
+                    delegation.dispatch(d, db, "worker", execute=True,
+                            ack_unmetered=True,
+                            executor=lambda *args, **kwargs: called.append(1))
+                self.assertEqual(called, [])
+                self.assertEqual(lifecycle.show(db, "child-001")["state"], "ready")
+
     def test_readonly_cannot_launch_writable_supervisor(self):
         d = fixture()
         d["child"].update(permission="read-only", role="reviewer")
+        self.assertEqual(delegation.plan(d)["icm_stage"], "verify")
         with tempfile.TemporaryDirectory() as folder:
             with lifecycle.connect(Path(folder) / "task.sqlite") as db:
                 lifecycle.create(db, "child-001", 48, d["child"]["criteria"], 100)
