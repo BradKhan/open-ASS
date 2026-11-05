@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = {"verify": "verify.py", "init": "init_project.py",
            "context": "context.py", "agents": "agents.py", "skills": "skills.py",
            "pr-check": "pr_gate.py", "security": "security_baseline.py",
-           "attest": "attest.py", "bootstrap": "project_setup.py", "role-sync": "role_sync.py", "task": "lifecycle.py", "harness": "harness.py", "quality": "product_quality.py", "evaluate": "adversarial_eval.py", "browser": "browser_probe.py", "readiness": "readiness.py", "run": "supervisor.py", "github-admin": "github_admin.py", "harness-check": "harness_compat.py", "live-smoke": "live_smoke.py", "dispatch": "dispatch.py", "activate": "activation.py", "bench": "eval_suite.py"}
+           "attest": "attest.py", "bootstrap": "project_setup.py", "role-sync": "role_sync.py", "task": "lifecycle.py", "harness": "harness.py", "quality": "product_quality.py", "evaluate": "adversarial_eval.py", "browser": "browser_probe.py", "readiness": "readiness.py", "run": "supervisor.py", "github-admin": "github_admin.py", "harness-check": "harness_compat.py", "live-smoke": "live_smoke.py", "dispatch": "dispatch.py", "activate": "activation.py", "bench": "eval_suite.py", "delegate": "delegation.py"}
 
 
 def run(path, args=()):
