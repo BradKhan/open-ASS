@@ -169,7 +169,7 @@ def terminate(process):
 def run(db,task_id,runtime,role,actor,root=ROOT,timeout=900,reserve_cents=0,
         execute=False,ack_unmetered=False,include_skills=(),
         popen=subprocess.Popen,sleep=time.sleep,clock=time.monotonic,
-        backend="local",container_image=None):
+        backend="local",container_image=None,working_paths=()):
     init(db)
     snapshot=lifecycle.show(db,task_id)
     if snapshot["state"]!="ready":raise SupervisorError("task must be ready")
@@ -195,7 +195,7 @@ def run(db,task_id,runtime,role,actor,root=ROOT,timeout=900,reserve_cents=0,
         raise SupervisorError("runtime has no proven hard dollar cap; pass --ack-unmetered to authorize")
     safe_branch(root)
     if not shutil_which(cmd[0]):raise SupervisorError("agent CLI missing: "+cmd[0])
-    prompt=harness.make_prompt(role,root=root,include_skills=include_skills)
+    prompt=harness.make_prompt(role,working=tuple(working_paths),root=root,include_skills=include_skills)
     # Criteria are mandatory context, not an instruction to change approval policy.
     prompt += "\n\nACCEPTED ISSUE #"+str(snapshot["issue"])+":\n"+snapshot["criteria"]
     directory=root/".openass"/"runs"
