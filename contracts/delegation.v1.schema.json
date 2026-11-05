@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Open ASS delegation v1",
+  "description": "An explicit parent-child task contract for plan and supervised execution. Cross-field scope, authorization and budget monotonicity is enforced by scripts/delegation.py; JSON schema alone does not confer permissions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "parent",
+    "child"
+  ],
+  "properties": {
+    "schema": {
+      "const": "openass.delegation.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,63}$"
+    },
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "permission",
+        "providers",
+        "scopes",
+        "budget_cents",
+        "timeout_seconds",
+        "max_depth"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,63}$"
+        },
+        "permission": {
+          "enum": [
+            "read-only",
+            "workspace-write"
+          ]
+        },
+        "providers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "codex",
+              "claude",
+              "hermes"
+            ]
+          }
+        },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "budget_cents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        }
+      }
+    },
+    "child": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "harness",
+        "role",
+        "permission",
+        "scopes",
+        "budget_cents",
+        "timeout_seconds",
+        "depth",
+        "criteria",
+        "context"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,63}$"
+        },
+        "harness": {
+          "enum": [
+            "codex",
+            "claude",
+            "hermes"
+          ]
+        },
+        "role": {
+          "enum": [
+            "engineer",
+            "designer",
+            "writer",
+            "reviewer"
+          ]
+        },
+        "permission": {
+          "enum": [
+            "read-only",
+            "workspace-write"
+          ]
+        },
+        "scopes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "budget_cents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000000
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "criteria": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20000
+        },
+        "context": {
+          "type": "array",
+          "maxItems": 40,
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  }
+}
