@@ -110,12 +110,9 @@
           ]
         },
         "role": {
-          "enum": [
-            "engineer",
-            "designer",
-            "writer",
-            "reviewer"
-          ]
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,63}$",
+          "description": "Must reference a role from config/agents.json; validated by the Python adapter."
         },
         "permission": {
           "enum": [
