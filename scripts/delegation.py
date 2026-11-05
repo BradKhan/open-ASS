@@ -183,6 +183,10 @@ def dispatch(data, db, actor, *, execute=False, ack_unmetered=False,
             raise DelegationError("context source cannot be independently verified") from exc
         if actual != item["sha256"]:
             raise DelegationError("context source hash changed or was misreported")
+    # ICM supplies the canonical orientation, stage contract and approved refs.
+    # Working paths extend that exact stage, never replace its authority.
+    stage = agents.load()["roles"][child["role"]]["stage"]
+    context.plan(stage, [row["path"] for row in child["context"]], ROOT)
     if backend not in ("local", "container"):
         raise DelegationError("unknown execution backend")
     # The existing supervisor enforces clean nondefault branches, actual
@@ -193,7 +197,8 @@ def dispatch(data, db, actor, *, execute=False, ack_unmetered=False,
                        root=ROOT, timeout=child["timeout_seconds"],
                        reserve_cents=child["budget_cents"],
                        execute=True, ack_unmetered=True,
-                       backend=backend, container_image=container_image)
+                       backend=backend, container_image=container_image,
+                       working_paths=tuple(row["path"] for row in child["context"]))
     return {"delegation_id": request["id"], "parent": request["parent"]["id"],
             "task": child["task_id"], "execution": outcome,
             "accepted": False, "scope_enforced": False,
