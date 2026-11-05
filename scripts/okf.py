@@ -105,6 +105,13 @@ def inspect(bundle):
                          else metadata.get("type") if metadata else None,
                 "title": metadata.get("title") if metadata else None,
             }
+            # Delegation context works on project-relative paths only; do not
+            # manufacture one for an external bundle.
+            try:
+                project_relative = path.relative_to(Path(__file__).resolve().parents[1]).as_posix()
+                rows["project_context_path"] = project_relative
+            except ValueError:
+                pass
             if metadata:
                 for key in ("status", "stale_after", "sources", "generated", "verified"):
                     if key in metadata:
