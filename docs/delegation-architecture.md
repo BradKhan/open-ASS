@@ -79,11 +79,19 @@ The child task must already exist in the lifecycle database, be `ready`, and hav
 - Parent `read-only` cannot produce a child `workspace-write` request.
 - Allowed provider, relative scopes, depth, maximum timeout and allocation must be subsets of the parent declaration.
 - Unknown fields, shell arguments, absolute/traversing paths, invalid digests and unsupported providers fail closed.
-- Context hashes preserve origin claims; **V1 does not independently re-hash or inject those files into a running agent**.
+- Context references are independently re-hashed immediately before an opted-in launch. Verified files are passed into the existing ICM stage bundle with the role-appropriate stage instructions. This is not a guarantee that the model read or correctly interpreted every source.
 - **Scopes are validated but not yet enforced at the filesystem or network layer.** An operating-system sandbox is required for that guarantee. This includes the case where an underlying provider has native write access beyond its advertised workspace.
 - Containers are optional. The existing container backend requires a digest-pinned image and disallows network, with bounded resources.
 - No approval, merge, deployment, external tool installation, account linking, provider authentication or automatic follow-up is performed by the delegation adapter.
 - Cost reservations are not actual billing ceilings. Provider usage is recorded when available; other providers may exceed reservations.
+
+## OKF and ICM integration
+
+- **ICM** is already the canonical context router (`context/routes.json` and `scripts/context.py`). A delegated role maps to its existing ICM stage. At actual execution, requested context references are hashed and supplied as working files to the stage's bounded context bundle.
+- **OKF v0.2** is an optional, human-readable knowledge source, not another mandatory memory database. Run `python3 scripts/openass.py okf inspect path/to/bundle` to inspect documents, their real SHA-256 hashes, and available provenance metadata. Add an explicit `project_context_path` and `sha256` from a project-local bundle to the child context in the delegation contract.
+- Bundle inspection requires only `PyYAML==6.0.3`, installed explicitly using `pip install -r requirements-okf.txt`; the ordinary Open ASS CLI keeps its existing minimal runtime dependencies. Development CI installs the same pin for tests.
+- The OKF reader performs **bounded structural checks**, not complete certification of every v0.2 semantic rule. It does not execute attesters, infer verified trust, fetch external sources, or import any knowledge automatically.
+- OKF stores portable knowledge, ICM scopes its use, the delegation contract requests bounded execution, and the existing verifier/authorization system decides what may be accepted. No layer gives another layer authority by adding metadata.
 
 ## Interfaces to standardize next
 
