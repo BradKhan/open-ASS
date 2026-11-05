@@ -31,7 +31,7 @@ class OKFTests(unittest.TestCase):
             self.assertEqual(item["sha256"], hashlib.sha256(raw.encode()).hexdigest())
             self.assertEqual(item["sources"][0]["uri"], "https://example.invalid/reference")
             self.assertEqual(item["verified"][0]["by"], "human:maintainer")
-            self.assertIn("not", result["note"].lower())
+            self.assertIn("no independent provenance", result["note"].lower())
 
     def test_missing_type_is_finding_not_unrecognized_type_rejection(self):
         with tempfile.TemporaryDirectory() as folder:
